@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>大日本帝國廻転抽籤器</title>
+<style>
+/* ══════════════════════════════════════════════════
+   CSS変数 - すべてvh/vw/clampベース
+══════════════════════════════════════════════════ */
+:root {
+    --cream: #f5e6c8;
+    --dark:  #1a0800;
+    --header-h: clamp(36px, 5vh, 56px);
+    --topbar-h: clamp(32px, 4.5vh, 48px);
+    --chrome-h: calc(var(--header-h) + var(--topbar-h));
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+
+html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', '游明朝', serif;
+    color: var(--cream);
+    background: #0a0000;
+}
+
+/* ══════════ 背景動画 ══════════ */
+#bg-video, #omi-video {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+#bg-video  { z-index: 0; }
+#omi-video { z-index: 9999; display: none; }
+
+/* ══════════ ヘッダー ══════════ */
+.jp-header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: linear-gradient(90deg, #2a0000, #5a0000, #7a0000, #5a0000, #2a0000);
+    z-index: 200; overflow: hidden;
+    box-shadow: 0 3px 16px rgba(139,0,0,.95);
+    border-bottom: 2px solid rgba(255,255,255,.5);
+    display: flex; align-items: center;
+}
+.scrolling-text {
+    display: flex; white-space: nowrap;
+    animation: scroll-right 30s linear infinite;
+}
+@keyframes scroll-right {
+    0%   { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+}
+.scrolling-text span {
+    font-size: clamp(.7rem, 1.6vh, 1.3rem);
+    font-weight: bold; color: #fff;
+    text-shadow: 1px 1px 5px rgba(0,0,0,.9);
+    padding: 0 40px; letter-spacing: 4px;
+}
+
+/* ══════════ ヘッダー右ボタン ══════════ */
+.header-buttons {
+    position: fixed; top: 0; right: 0;
+    height: var(--header-h);
+    display: flex; align-items: center;
+    z-index: 201;
+}
+.header-icon-btn {
+    background: transparent; color: #fff; border: none;
+    width: clamp(36px,4vh,48px); height: var(--header-h);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: clamp(1rem,1.8vh,1.4rem);
+    transition: background .18s;
+}
+.header-icon-btn:hover { background: rgba(255,255,255,.12); }
+
+.hamburger-btn {
+    background: transparent; border: none;
+    width: clamp(40px,4.5vh,52px); height: var(--header-h);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: clamp(4px,0.6vh,6px);
+    cursor: pointer; padding: 0;
+    transition: background .18s;
+}
+.hamburger-btn:hover { background: rgba(255,255,255,.12); }
+.hamburger-btn span {
+    display: block; width: 20px; height: 2px;
+    background: #fff; border-radius: 2px; transition: all .3s;
+}
+.hamburger-btn.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.hamburger-btn.active span:nth-child(2) { opacity: 0; }
+.hamburger-btn.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* ══════════ トップバー ══════════ */
+.top-bar {
+    position: fixed; top: var(--header-h); left: 0; right: 0;
+    height: var(--topbar-h);
+    background: rgba(0,0,0,.5);
+    border-bottom: 1px solid rgba(255,255,255,.15);
+    z-index: 199;
+    display: flex; align-items: center;
+    gap: clamp(6px,1vw,14px);
+    padding: 0 clamp(6px,1vw,14px);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.top-bar::-webkit-scrollbar { display: none; }
+.top-bar-btn {
+    background: rgba(90,0,0,.88); color: #fff;
+    border: 1.5px solid rgba(255,255,255,.6);
+    padding: 3px 10px; border-radius: 4px;
+    cursor: pointer; font-size: clamp(.7rem,1.4vh,1rem);
+    font-weight: bold; font-family: inherit;
+    white-space: nowrap; transition: all .2s; flex-shrink: 0;
+}
+.top-bar-btn:hover { background: rgba(140,0,0,1); }
+.top-bar-btn.active { background: rgba(40,30,0,.9); border-color: #fff; }
+
+/* ══════ トグルボタン（名言・解説オンオフ）══════ */
+.toggle-group {
+    display: flex; align-items: center;
+    gap: 4px; flex-shrink: 0;
+    background: rgba(20,0,0,.75);
+    border: 1.5px solid rgba(255,255,255,.35);
+    border-radius: 5px;
+    padding: 2px 6px;
+    height: calc(var(--topbar-h) - 8px);
+}
+.toggle-group-label {
+    font-size: clamp(.55rem,1.1vh,.75rem);
+    color: rgba(255,255,255,.6);
+    white-space: nowrap;
+    padding-right: 4px;
+    border-right: 1px solid rgba(255,255,255,.2);
+    margin-right: 2px;
+    letter-spacing: 1px;
+}
+.toggle-btn {
+    background: rgba(60,0,0,.8); color: rgba(255,255,255,.7);
+    border: 1px solid rgba(255,255,255,.4);
+    padding: 2px 8px; border-radius: 3px;
+    cursor: pointer; font-size: clamp(.6rem,1.2vh,.8rem);
+    font-weight: bold; font-family: inherit;
+    white-space: nowrap; transition: all .2s; flex-shrink: 0;
+    letter-spacing: 1px;
+}
+.toggle-btn:hover { background: rgba(110,0,0,.9); color: #fff; }
+.toggle-btn.off {
+    background: rgba(15,10,5,.9);
+    color: rgba(255,255,255,.3);
+    border-color: rgba(255,255,255,.2);
+    text-decoration: line-through;
+}
+
+.vol-row, .spd-row {
+    display: flex; align-items: center;
+    gap: 5px; flex-shrink: 0;
+}
+.vol-row span, .spd-row span {
+    font-size: clamp(.6rem,1.3vh,.85rem); color: #fff; white-space: nowrap;
+}
+.top-bar input[type=range] {
+    width: clamp(50px,7vw,100px); height: 4px; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    background: rgba(255,255,255,.3); border-radius: 3px; outline: none;
+}
+.top-bar input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px;
+    background: #fff; border-radius: 50%; cursor: pointer;
+}
+
+/* ══════════ サイドパネル共通 ══════════ */
+.side-panel {
+    position: fixed; top: 0; right: 0;
+    width: min(420px, 92vw);
+    height: 100vh; height: 100dvh;
+    background: rgba(6,1,0,.97);
+    border-left: 2px solid rgba(255,255,255,.4);
+    z-index: 300;
+    transform: translateX(100%);
+    transition: transform .35s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+.side-panel.show { transform: translateX(0); }
+
+.panel-head {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: rgba(20,0,0,.98);
+    border-bottom: 1px solid rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.panel-head-title {
+    color: #fff; font-size: clamp(.85rem,1.5vh,1.1rem);
+    font-weight: bold; letter-spacing: 3px;
+}
+.panel-close-x {
+    background: transparent; border: 1.5px solid rgba(255,255,255,.5);
+    color: #fff; width: 30px; height: 30px; border-radius: 50%;
+    font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; font-family: sans-serif; line-height: 1;
+}
+.panel-close-x:hover { background: rgba(255,255,255,.15); transform: rotate(90deg); }
+
+.panel-body {
+    flex: 1; overflow-y: auto; padding: 16px 20px;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.2) transparent;
+}
+.panel-body::-webkit-scrollbar { width: 5px; }
+.panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 3px; }
+
+.menu-section, .settings-section {
+    margin-bottom: 18px; padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255,255,255,.2);
+}
+.menu-section:last-child, .settings-section:last-child { border-bottom: none; }
+.menu-title, .settings-title {
+    color: #fff; font-size: clamp(.85rem,1.5vh,1.1rem);
+    font-weight: bold; margin-bottom: 8px; letter-spacing: 3px;
+}
+.menu-text { color: var(--cream); font-size: clamp(.75rem,1.3vh,.9rem); line-height: 1.8; margin-bottom: 5px; }
+.menu-label, .settings-label {
+    color: var(--cream); font-size: clamp(.75rem,1.3vh,.9rem);
+    margin-bottom: 4px; display: block;
+}
+.menu-input, .menu-textarea, .settings-input {
+    width: 100%; padding: 7px; border-radius: 3px;
+    border: 1px solid rgba(255,255,255,.4);
+    background: rgba(255,255,255,.06);
+    color: var(--cream); font-size: clamp(.75rem,1.3vh,.9rem);
+    margin-bottom: 7px; font-family: inherit;
+}
+.menu-textarea { min-height: 80px; resize: vertical; }
+.menu-btn, .add-item-btn, .reset-btn {
+    width: 100%; background: rgba(90,0,0,.8);
+    color: #fff; border: 1px solid rgba(255,255,255,.4);
+    padding: 8px; border-radius: 3px; cursor: pointer;
+    font-weight: bold; font-size: clamp(.8rem,1.4vh,.95rem);
+    margin-top: 7px; font-family: inherit; letter-spacing: 2px; transition: background .2s;
+}
+.menu-btn:hover, .add-item-btn:hover { background: rgba(140,0,0,1); }
+.reset-btn { background: rgba(50,0,0,.8); }
+.reset-btn:hover { background: rgba(100,0,0,1); }
+.settings-file-label {
+    display: block; background: rgba(90,0,0,.8);
+    color: #fff; padding: 7px; border-radius: 3px;
+    text-align: center; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.4); margin-bottom: 7px;
+    font-weight: bold; letter-spacing: 2px;
+    font-size: clamp(.75rem,1.3vh,.9rem);
+    transition: background .2s;
+}
+.settings-file-label:hover { background: rgba(140,0,0,1); }
+.settings-file-input { display: none; }
+.item-list { max-height: 36vh; overflow-y: auto; margin-bottom: 7px; }
+.item-entry {
+    background: rgba(90,0,0,.35); padding: 9px;
+    margin-bottom: 7px; border-radius: 3px;
+    border: 1px solid rgba(255,255,255,.25);
+}
+.item-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+.item-remove {
+    background: #4a0000; color: #fff;
+    border: none; padding: 3px 9px; border-radius: 3px;
+    cursor: pointer; font-weight: bold; font-size: .8rem;
+}
+.item-remove:hover { background: #8b0000; }
+.color-picker-wrapper { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.color-picker { width: 42px; height: 28px; border: 1px solid rgba(255,255,255,.4); border-radius: 3px; cursor: pointer; }
+
+/* ══════════ 起動ポップアップ ══════════ */
+.startup-quote {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(4,0,0,.98), rgba(0,0,0,.99));
+    z-index: 2000;
+    display: flex; flex-direction: row;
+    align-items: center; justify-content: center;
+    gap: clamp(20px,4vw,60px);
+    opacity: 1; transition: opacity 1.2s ease;
+    /* スキャンライン古めかしいエフェクト */
+    overflow: hidden;
+}
+.startup-quote::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,.18) 2px,
+        rgba(0,0,0,.18) 4px
+    );
+    pointer-events: none; z-index: 1;
+    animation: scanlines-move 8s linear infinite;
+}
+.startup-quote::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.55) 100%);
+    pointer-events: none; z-index: 2;
+}
+@keyframes scanlines-move {
+    0%   { background-position: 0 0; }
+    100% { background-position: 0 40px; }
+}
+.startup-quote.fade-out { opacity: 0; pointer-events: none; }
+
+/* テキストラッパー: z-index で scanlines の上に */
+.startup-quote-inner {
+    position: relative; z-index: 5;
+    display: flex; flex-direction: row;
+    align-items: center;
+    gap: clamp(20px,4vw,60px);
+}
+
+.startup-quote-text {
+    color: #fff; font-weight: bold;
+    font-size: clamp(1.2rem, 3.2vh, 2.4rem);
+    text-shadow: 0 0 20px rgba(255,200,100,.35), 0 0 8px rgba(255,100,0,.2), 2px 2px 8px rgba(0,0,0,1);
+    line-height: 2.1; letter-spacing: 5px;
+    writing-mode: vertical-rl; text-orientation: mixed;
+    max-height: 75vh;
+    /* タイプライター開始前は非表示 */
+    opacity: 1;
+    /* ちらつきエフェクト */
+    animation: flicker-text 4s ease-in-out infinite alternate;
+}
+.startup-quote-author {
+    color: var(--cream);
+    font-size: clamp(.7rem, 1.6vh, 1.1rem);
+    letter-spacing: 3px;
+    writing-mode: vertical-rl; text-orientation: mixed;
+    opacity: 0;
+    text-shadow: 0 0 10px rgba(255,200,100,.3);
+}
+.startup-quote-author.show {
+    animation: fadeInAuthor .8s ease forwards;
+}
+@keyframes fadeInAuthor {
+    from { opacity: 0; filter: blur(3px); }
+    to   { opacity: 1; filter: blur(0); }
+}
+@keyframes flicker-text {
+    0%,100% { text-shadow: 0 0 20px rgba(255,200,100,.35), 0 0 8px rgba(255,100,0,.2), 2px 2px 8px rgba(0,0,0,1); }
+    85%     { text-shadow: 0 0 30px rgba(255,220,120,.5), 0 0 12px rgba(255,120,0,.3), 2px 2px 8px rgba(0,0,0,1); }
+    87%     { text-shadow: 0 0 4px rgba(255,200,100,.1), 2px 2px 8px rgba(0,0,0,1); }
+    89%     { text-shadow: 0 0 30px rgba(255,220,120,.5), 0 0 12px rgba(255,120,0,.3), 2px 2px 8px rgba(0,0,0,1); }
+}
+
+/* タイプライター文字 各文字のspan */
+.tw-char {
+    display: inline;
+    opacity: 0;
+    animation: tw-appear .05s ease forwards;
+}
+@keyframes tw-appear {
+    from { opacity: 0; filter: blur(2px) brightness(2); color: #ffddaa; }
+    to   { opacity: 1; filter: blur(0) brightness(1); color: #ffffff; }
+}
+
+ruby { ruby-align: center; }
+rt { font-size: .38em; letter-spacing: 1px; color: rgba(255,220,180,.9); font-weight: normal; }
+
+/* ══════════════════════════════════════════════
+   メインレイアウト
+══════════════════════════════════════════════ */
+.main-layout {
+    position: fixed;
+    top: var(--chrome-h);
+    left: 0; right: 0;
+    bottom: clamp(22px,3.5vh,32px);
+    z-index: 1;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px,1.5vw,24px);
+    padding: clamp(4px,.8vh,10px) clamp(6px,1vw,16px);
+    overflow: hidden;
+}
+
+/* ── ルーレットゾーン ── */
+.roulette-zone {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.roulette-container {
+    position: relative;
+    width:  clamp(160px, min(38vw, 78vh - 90px), 420px);
+    height: clamp(160px, min(38vw, 78vh - 90px), 420px);
+    flex-shrink: 0;
+}
+
+#roulette {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: clamp(3px,0.6vh,7px) solid rgba(255,255,255,.75);
+    background: #1a0800;
+    box-shadow: 0 0 28px rgba(255,255,255,.12), 0 0 55px rgba(139,0,0,.35);
+    transition: transform 4s cubic-bezier(.15,0,.15,1);
+    display: block;
+}
+
+/* ポインター: ルーレット右端に重ねて内側に配置 */
+.character-pointer {
+    position: absolute;
+    top: 50%;
+    /* ルーレット右端から内側に 12% 入り込む */
+    left: calc(100% - 12%);
+    /* ルーレット幅の 65% の大きさ */
+    width:  clamp(90px, 65%, 280px);
+    height: clamp(90px, 65%, 280px);
+    transform: translateY(-50%);
+    filter: drop-shadow(0 0 10px rgba(255,200,100,.5)) drop-shadow(2px 2px 4px rgba(0,0,0,.8));
+    object-fit: contain;
+    z-index: 11;
+    transform-origin: center center;
+    pointer-events: none;
+}
+@keyframes spin-cw {
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+.is-spinning { animation: spin-cw .15s linear infinite; }
+
+/* ── 中央ゾーン: 名言+ボタン ── */
+.quote-zone {
+    flex: 1 1 0;
+    min-width: 0;
+    height: clamp(160px, min(38vw, 78vh - 90px), 420px);
+    display: flex; flex-direction: column;
+    gap: clamp(6px,1vh,14px);
+}
+
+.result-display {
+    background: rgba(70,0,0,.92);
+    padding: clamp(8px,1.5vh,20px) clamp(10px,1.5vw,22px);
+    border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,.55);
+    width: 100%;
+    flex: 1; min-height: 0;
+    opacity: 0; transition: opacity .5s;
+    box-shadow: 0 0 22px rgba(255,255,255,.06);
+    display: flex; flex-direction: column; justify-content: center;
+    overflow: hidden;
+}
+.result-display.show { opacity: 1; }
+/* 非表示状態 */
+.result-display.hidden-panel {
+    display: none !important;
+}
+.result-quote {
+    color: #fff; font-size: clamp(.7rem,1.5vh,1.15rem);
+    font-weight: bold; text-align: center;
+    margin-bottom: clamp(4px,.8vh,10px);
+    line-height: 1.7; letter-spacing: 1px; word-break: keep-all;
+}
+.result-author {
+    color: var(--cream); font-size: clamp(.65rem,1.3vh,.95rem);
+    text-align: center; letter-spacing: 2px;
+}
+
+#spin-btn {
+    background: rgba(90,0,0,.92); color: #fff;
+    border: 1.5px solid rgba(255,255,255,.7);
+    padding: clamp(8px,1.4vh,16px) 0;
+    font-size: clamp(.95rem,2vh,1.5rem); font-weight: bold;
+    border-radius: 6px; cursor: pointer;
+    font-family: inherit; letter-spacing: 5px;
+    box-shadow: 0 3px 16px rgba(139,0,0,.6);
+    transition: all .25s ease; width: 100%; flex-shrink: 0;
+}
+#spin-btn:hover { background: rgba(140,0,0,1); transform: scale(1.03); box-shadow: 0 0 24px rgba(255,255,255,.3); }
+#spin-btn:active { transform: scale(.97); }
+#spin-btn:disabled { background: #1a1200; box-shadow: none; cursor: not-allowed; color: #555; border-color: #333; }
+#spin-btn:disabled:hover { background: #1a1200; transform: scale(1); }
+
+/* ── 右ゾーン: 解説 ── */
+.explanation-zone {
+    flex-shrink: 0;
+    width: clamp(100px, 16vw, 200px);
+    height: clamp(160px, min(38vw, 78vh - 90px), 420px);
+}
+.explanation-display {
+    background: rgba(50,0,0,.92);
+    padding: clamp(8px,1.3vh,16px) clamp(8px,1.2vw,18px);
+    border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,.45);
+    width: 100%; height: 100%;
+    opacity: 0; transition: opacity .5s;
+    box-shadow: 0 0 16px rgba(255,255,255,.05);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+.explanation-display.show { opacity: 1; }
+.explanation-display.hidden-panel {
+    display: none !important;
+}
+.explanation-title {
+    color: #fff; font-size: clamp(.7rem,1.3vh,.95rem);
+    font-weight: bold; margin-bottom: clamp(5px,.9vh,10px);
+    text-align: center; border-bottom: 1px solid rgba(255,255,255,.3);
+    padding-bottom: 5px; letter-spacing: 3px; flex-shrink: 0;
+}
+.explanation-content {
+    color: var(--cream); font-size: clamp(.6rem,1.15vh,.85rem);
+    line-height: 1.9;
+    writing-mode: vertical-rl; text-orientation: mixed;
+    flex: 1; overflow-y: auto; letter-spacing: 1px; min-height: 0;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent;
+}
+.explanation-content::-webkit-scrollbar { width: 3px; }
+.explanation-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); }
+
+/* ── ヒント ── */
+.f9-hint {
+    position: fixed; bottom: clamp(3px,.6vh,8px); left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,.6); color: rgba(255,255,255,.6);
+    border: 1px solid rgba(255,255,255,.2);
+    padding: 2px 10px; border-radius: 12px;
+    font-size: clamp(.55rem,1vh,.75rem); z-index: 50;
+    pointer-events: none; letter-spacing: 2px; white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .explanation-zone { display: none; }
+    .quote-zone { min-width: 120px; }
+}
+@media (max-width: 500px) {
+    .top-bar-btn { font-size: .65rem; padding: 2px 7px; }
+    .vol-row span, .spd-row span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<video id="bg-video" loop autoplay playsinline muted>
+    <source src="dainiti.mp4" type="video/mp4">
+</video>
+<video id="omi-video" playsinline>
+    <source src="omimusic.mp4" type="video/mp4">
+</video>
+
+<!-- ヘッダー -->
+<div class="jp-header">
+    <div class="scrolling-text" id="header-scroll">
+        <span id="header-text-1">有ニ利勝ノ後最ニ忍堪　貫一誠至國報産生</span>
+        <span id="header-text-2">有ニ利勝ノ後最ニ忍堪　貫一誠至國報産生</span>
+    </div>
+</div>
+
+<!-- ヘッダー右ボタン -->
+<div class="header-buttons">
+    <button class="header-icon-btn" id="settings-toggle" title="設定">⚙</button>
+    <button class="hamburger-btn" id="hamburger-toggle" title="メニュー">
+        <span></span><span></span><span></span>
+    </button>
+</div>
+
+<!-- トップバー -->
+<div class="top-bar">
+    <button class="top-bar-btn" id="translate-btn">🔤 現代語訳</button>
+    <button class="top-bar-btn" id="omi-btn">🏠 近江住宅使用不可</button>
+    <div class="vol-row">
+        <span>音量</span>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.5">
+    </div>
+    <div class="spd-row">
+        <span>指針速度</span>
+        <input type="range" id="arrow-speed-slider" min="0.05" max="1" step="0.05" value="0.15">
+    </div>
+    <!-- 名言・解説 オンオフトグル -->
+    <div class="toggle-group">
+        <span class="toggle-group-label">表示</span>
+        <button class="toggle-btn" id="toggle-quote-btn">名言</button>
+        <button class="toggle-btn" id="toggle-explanation-btn">解説</button>
+    </div>
+</div>
+
+<!-- ハンバーガーメニュー -->
+<div class="side-panel" id="hamburger-menu">
+    <div class="panel-head">
+        <span class="panel-head-title">📋 メニュー</span>
+        <button class="panel-close-x" id="hamburger-close">✕</button>
+    </div>
+    <div class="panel-body">
+        <div class="menu-section">
+            <div class="menu-title">📜 プライバシーポリシー</div>
+            <div class="menu-text">本アプリケーションは、利用者の個人情報を一切収集・保存・送信いたしません。すべての処理は利用者のブラウザ内にて完結します。</div>
+        </div>
+        <div class="menu-section">
+            <div class="menu-title">©️ 著作権について</div>
+            <div class="menu-text">本アプリケーションの著作権は放棄されており、自由にご利用いただけます。完全無料にて提供しております。</div>
+            <div class="menu-text" style="margin-top:8px;color:#fff;">© Nanaf12_</div>
+        </div>
+        <div class="menu-section">
+            <div class="menu-title">📧 お問い合わせ</div>
+            <label class="menu-label">お名前（任意）</label>
+            <input type="text" id="contact-name" class="menu-input" placeholder="お名前">
+            <label class="menu-label">メールアドレス（任意）</label>
+            <input type="email" id="contact-email" class="menu-input" placeholder="example@email.com">
+            <label class="menu-label">お問い合わせ内容</label>
+            <textarea id="contact-message" class="menu-textarea" placeholder="ご意見・ご要望をお聞かせください"></textarea>
+            <button class="menu-btn" id="contact-submit">送　信</button>
+        </div>
+        <div class="menu-section">
+            <div class="menu-title">🔤 フォントサイズ調整</div>
+            <label class="menu-label">ヘッダー文字</label>
+            <input type="range" id="header-font-size" class="settings-input" min="0.8" max="2.5" step="0.1" value="1.4">
+            <label class="menu-label">名言フォント</label>
+            <input type="range" id="quote-font-size" class="settings-input" min="0.7" max="2" step="0.1" value="1.15">
+            <label class="menu-label">著者名フォント</label>
+            <input type="range" id="author-font-size" class="settings-input" min="0.6" max="1.6" step="0.1" value="0.95">
+            <label class="menu-label">解説フォント</label>
+            <input type="range" id="explanation-font-size" class="settings-input" min="0.6" max="1.3" step="0.05" value="0.85">
+        </div>
+    </div>
+</div>
+
+<!-- 設定パネル -->
+<div class="side-panel" id="settings-panel">
+    <div class="panel-head">
+        <span class="panel-head-title">⚙ 設定</span>
+        <button class="panel-close-x" id="settings-close">✕</button>
+    </div>
+    <div class="panel-body">
+        <div class="settings-section">
+            <div class="settings-title">🎬 背景動画</div>
+            <label class="settings-file-label" for="bg-video-upload">背景動画を変更</label>
+            <input type="file" id="bg-video-upload" class="settings-file-input" accept="video/*">
+        </div>
+        <div class="settings-section">
+            <div class="settings-title">🎯 指針画像</div>
+            <label class="settings-file-label" for="pointer-upload">指針画像を変更</label>
+            <input type="file" id="pointer-upload" class="settings-file-input" accept="image/*">
+        </div>
+        <div class="settings-section">
+            <div class="settings-title">⚡ 回転速度</div>
+            <label class="settings-label">回転時間（秒）</label>
+            <input type="number" id="spin-duration" class="settings-input" value="4" min="1" max="10" step="0.5">
+        </div>
+        <div class="settings-section">
+            <div class="settings-title">🎰 項目一覧</div>
+            <div class="item-list" id="item-list"></div>
+            <button class="add-item-btn" id="add-item-btn">＋ 項目を追加</button>
+            <button class="reset-btn" id="reset-btn">🔄 すべて初期化</button>
+        </div>
+    </div>
+</div>
+
+<!-- 起動時名言 -->
+<div class="startup-quote" id="startup-quote">
+    <div class="startup-quote-inner">
+        <div class="startup-quote-text"  id="startup-text"></div>
+        <div class="startup-quote-author" id="startup-author"></div>
+    </div>
+</div>
+
+<!-- メインレイアウト -->
+<div class="main-layout">
+    <!-- 左: ルーレット＋ポインター -->
+    <div class="roulette-zone">
+        <div class="roulette-container">
+            <canvas id="roulette"></canvas>
+            <img src="arrow.png" class="character-pointer" id="char-img" alt="pointer">
+        </div>
+    </div>
+
+    <!-- 中: 名言＋ボタン -->
+    <div class="quote-zone">
+        <div class="result-display" id="result-display">
+            <div class="result-quote"  id="result-quote"></div>
+            <div class="result-author" id="result-author"></div>
+        </div>
+        <button id="spin-btn">開　戦！</button>
+    </div>
+
+    <!-- 右: 解説 -->
+    <div class="explanation-zone">
+        <div class="explanation-display" id="explanation-display">
+            <div class="explanation-title"   id="explanation-title">名言解説</div>
+            <div class="explanation-content" id="explanation-content"></div>
+        </div>
+    </div>
+</div>
+
+<div class="f9-hint" id="f9-hint">回転開始＝F10　／　近江住宅＝F9</div>
+
+<script>
+// ────────────────────────────────────────
+// Canvas をコンテナサイズに合わせてリサイズ
+// ────────────────────────────────────────
+const canvas    = document.getElementById("roulette");
+const ctx       = canvas.getContext("2d");
+const container = canvas.parentElement;
+
+function syncCanvasSize() {
+    const s = container.offsetWidth;
+    canvas.width  = s;
+    canvas.height = s;
+    drawRoulette();
+}
+new ResizeObserver(syncCanvasSize).observe(container);
+
+// ────────────────────────────────────────
+// 基本変数
+// ────────────────────────────────────────
+const btn              = document.getElementById("spin-btn");
+const charImg          = document.getElementById("char-img");
+const video            = document.getElementById("bg-video");
+const omiVideo         = document.getElementById("omi-video");
+const omiBtn           = document.getElementById("omi-btn");
+const volumeSlider     = document.getElementById("volume-slider");
+const arrowSpeedSlider = document.getElementById("arrow-speed-slider");
+const settingsToggle   = document.getElementById("settings-toggle");
+const settingsPanel    = document.getElementById("settings-panel");
+const hamburgerToggle  = document.getElementById("hamburger-toggle");
+const hamburgerMenu    = document.getElementById("hamburger-menu");
+const translateBtn     = document.getElementById("translate-btn");
+const toggleQuoteBtn   = document.getElementById("toggle-quote-btn");
+const toggleExplBtn    = document.getElementById("toggle-explanation-btn");
+
+const defaultData = {
+    items:      ["東條英機","山本五十六","山下奉文","乃木希典","牟田口廉也","今村均"],
+    colors:     ["#8b0000","#5a0000","#7a0000","#6a0000","#4a0000","#3a2000"],
+    imageFiles: ["tojo.jpg","yamamoto.jpg","yamashita.jpg","nogi.jpg","mutaguchi.jpg","imamura.jpg"]
+};
+let items      = [...defaultData.items];
+let colors     = [...defaultData.colors];
+let imageFiles = [...defaultData.imageFiles];
+let spinDuration    = 4000;
+let arrowSpeed      = 0.15;
+let isModernMode    = false;
+let loadedImages    = [];
+let currentRotation = 0;
+let showQuote       = true;
+let showExplanation = true;
+
+const HEADER_OLD = "有ニ利勝ノ後最ニ忍堪貫一誠至國報産生";
+const HEADER_NEW = "有利な勝利の後は、最後まで忍耐強くあれ。貫いて一途に国に報いることを誠実に生きるべし。";
+
+// ────────────────────────────────────────
+// 名言・解説 オンオフトグル
+// ────────────────────────────────────────
+toggleQuoteBtn.addEventListener("click", () => {
+    showQuote = !showQuote;
+    toggleQuoteBtn.classList.toggle("off", !showQuote);
+    const rd = document.getElementById("result-display");
+    rd.classList.toggle("hidden-panel", !showQuote);
+});
+toggleExplBtn.addEventListener("click", () => {
+    showExplanation = !showExplanation;
+    toggleExplBtn.classList.toggle("off", !showExplanation);
+    const ed = document.getElementById("explanation-display");
+    ed.classList.toggle("hidden-panel", !showExplanation);
+    // 解説ゾーン全体も隠す
+    document.querySelector(".explanation-zone").style.display = showExplanation ? "" : "none";
+});
+
+// ────────────────────────────────────────
+// 起動時名言（タイプライター + ふりがな付き）
+// ────────────────────────────────────────
+const startupQuotesHTML = [
+    { textHTML:`<ruby>皇國<rt>こうこく</rt></ruby>ノ<ruby>興廢<rt>こうはい</rt></ruby>此ノ<ruby>一戰<rt>いっせん</rt></ruby>ニ在リ、<ruby>各員<rt>かくいん</rt></ruby><ruby>一層<rt>いっそう</rt></ruby><ruby>奮勵<rt>ふんれい</rt></ruby><ruby>努力<rt>どりょく</rt></ruby>セヨ`,
+      authorHTML:`─ <ruby>東鄕平八郎<rt>とうごうへいはちろう</rt></ruby>（<ruby>日本海海戰<rt>にほんかいかいせん</rt></ruby>・Z旗信號）` },
+    { textHTML:`<ruby>死<rt>し</rt></ruby>シテ<ruby>護國<rt>ごこく</rt></ruby>ノ鬼トナラン`,
+      authorHTML:`─ <ruby>大日本帝國<rt>だいにほんていこく</rt></ruby>　<ruby>精神訓<rt>せいしんくん</rt></ruby>` },
+    { textHTML:`<ruby>七生<rt>しちしょう</rt></ruby><ruby>報國<rt>ほうこく</rt></ruby>`,
+      authorHTML:`─ <ruby>楠木正成<rt>くすのきまさしげ</rt></ruby>（<ruby>南北朝時代<rt>なんぼくちょうじだい</rt></ruby>）` },
+    { textHTML:`<ruby>大和魂<rt>やまとだましい</rt></ruby>トハ、<ruby>死<rt>し</rt></ruby>ヲ<ruby>覺悟<rt>かくご</rt></ruby>シテ<ruby>進<rt>すす</rt></ruby>ムコトナリ`,
+      authorHTML:`─ <ruby>大日本帝國<rt>だいにほんていこく</rt></ruby>　<ruby>軍人精神<rt>ぐんじんせいしん</rt></ruby>` },
+    { textHTML:`<ruby>滅私奉公<rt>めっしほうこう</rt></ruby>、<ruby>一身<rt>いっしん</rt></ruby>ヲ<ruby>國家<rt>こっか</rt></ruby>ニ捧ゲヨ`,
+      authorHTML:`─ <ruby>大日本帝國<rt>だいにほんていこく</rt></ruby>　<ruby>教育勅語<rt>きょういくちょくご</rt></ruby>精神` },
+    { textHTML:`<ruby>玉碎<rt>ぎょくさい</rt></ruby>スレドモ<ruby>降伏<rt>こうふく</rt></ruby>セズ`,
+      authorHTML:`─ <ruby>大日本帝國陸軍<rt>だいにほんていこくりくぐん</rt></ruby>　<ruby>戰陣訓<rt>せんじんくん</rt></ruby>` }
+];
+
+/**
+ * HTML文字列をパースして「ruby要素まるごと」か「テキストノード1文字」の
+ * トークン配列に変換する
+ */
+function tokenizeHTML(html) {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    const tokens = [];
+    function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            for (const ch of node.textContent) tokens.push({ type: 'char', char: ch });
+        } else if (node.nodeName === 'RUBY') {
+            tokens.push({ type: 'ruby', html: node.outerHTML });
+        } else {
+            node.childNodes.forEach(walk);
+        }
+    }
+    tmp.childNodes.forEach(walk);
+    return tokens;
+}
+
+function showStartupQuote() {
+    const q = startupQuotesHTML[Math.floor(Math.random() * startupQuotesHTML.length)];
+    const textEl   = document.getElementById("startup-text");
+    const authorEl = document.getElementById("startup-author");
+    textEl.innerHTML   = "";
+    authorEl.innerHTML = "";
+    authorEl.classList.remove("show");
+
+    // タイプライター: 1文字ずつ遅延表示
+    const tokens = tokenizeHTML(q.textHTML);
+    const CHAR_DELAY = 80; // ms per token
+    let delay = 300; // 初期遅延
+
+    tokens.forEach((tok) => {
+        if (tok.type === 'char') {
+            const span = document.createElement("span");
+            span.className = "tw-char";
+            span.style.animationDelay = delay + "ms";
+            span.textContent = tok.char;
+            textEl.appendChild(span);
+            delay += CHAR_DELAY;
+        } else {
+            // ruby要素: ランダムなわずかなノイズ追加
+            const wrapper = document.createElement("span");
+            wrapper.className = "tw-char";
+            wrapper.style.animationDelay = delay + "ms";
+            wrapper.innerHTML = tok.html;
+            textEl.appendChild(wrapper);
+            delay += CHAR_DELAY * 2; // ruby は少し長め
+        }
+    });
+
+    // 著者はテキスト終了後にフェードイン
+    const authorDelay = delay + 600;
+    setTimeout(() => {
+        authorEl.innerHTML = q.authorHTML;
+        authorEl.classList.add("show");
+    }, authorDelay);
+
+    // 閉じるタイミング
+    const totalLen = tokens.length;
+    const waitMs = Math.max(8000, authorDelay + totalLen * 40 + 3000);
+    setTimeout(() => {
+        const el = document.getElementById("startup-quote");
+        el.classList.add("fade-out");
+        setTimeout(() => { el.style.display = "none"; }, 1200);
+    }, waitMs);
+}
+
+// ────────────────────────────────────────
+// 名言データ
+// ────────────────────────────────────────
+const quotesOriginal = {
+    "東條英機":[
+        {text:"生キテ虜囚ノ辱ヲ受ケズ、死シテ罪禍ノ汚名ヲ殘スコト勿レ",author:"東條英機（戰陣訓・昭和十六年）",explanation:"昭和十六年一月ニ東條英機陸軍大臣ガ發令シタル「戰陣訓」ノ中核ヲナス言葉ナリ。捕虜トナルコトヲ恥トシ、降伏ヨリ自決ヲ選ブコトヲ命ジタリ。東條自身ハ終戰後ニ自殺ヲ圖リタルモ未遂ニ終ハリ、A級戰犯トシテ處刑サレタリ。"},
+        {text:"戰爭ハ政治ノ延長ナリ。政治ガ失敗シタル時、軍ガ登場ス",author:"東條英機（首相・陸相在任中）",explanation:"昭和十六年十月ニ首相ニ就任シタル東條ハ、陸相・内相・參謀總長ヲ兼任スル史上稀ナル權力集中ヲ行ヒ、軍ト政治ヲ一體化セシメタリ。"},
+        {text:"大東亞共榮圈ノ建設ハ皇國ノ使命ナリ",author:"東條英機（首相演説・昭和十七年）",explanation:"歐米ノ植民地支配ヨリアジアヲ解放シ、日本ヲ盟主トスル共存共榮圈ヲ建設スルトイフ理想ヲ掲ゲタルガ、現實ニハ軍事支配ノ體制ナリキ。"},
+        {text:"國家ノ存亡ヲ賭ケタル今次ノ大戰、吾人ハ一億一心ヲ以テ邁進セザルベカラズ",author:"東條英機（首相就任演説・昭和十六年）",explanation:"首相就任直後ノ演説ニテ、日米開戰ヲ念頭ニ置キ國民ノ總動員ヲ呼ビカケタル言葉ナリ。「一億一心」ハ當時ノ戰時標語トナレリ。"},
+        {text:"軍人ハ命令ニ從フコトガ最大ノ美德ナリ",author:"東條英機（陸軍大臣訓示・昭和十五年）",explanation:"陸軍大臣トシテ將兵ニ向ケ繰リ返シ説キタル言葉ナリ。絶對服從ノ軍隊文化ヲ體現シ、後ニインパール作戰ノ如キ無謀ナル命令ヲモ止メラレザル一因トナレリ。"},
+        {text:"日本ハ戰フ。此ノ決意ハ揺ルギナシ",author:"東條英機（開戰前夜ノ閣議・昭和十六年）",explanation:"昭和十六年十二月一日ノ御前會議ニ於ケル言葉ナリ。對米英開戰ノ最終決定ガ下サレタル歴史的瞬間ニ語ラレ、日本ヲ破滅ノ道ヘト導キタリ。"},
+        {text:"天皇陛下ノ御稜威ノ下、皇軍ハ必勝ヲ期ス",author:"東條英機（大東亞戰爭開戰詔書奉讀式・昭和十六年）",explanation:"開戰詔書奉讀式ニテ述ベタル言葉ナリ。天皇ノ權威ヲ笠ニ着タル言辭ハ、後ニ東京裁判ニテ東條ガ全責任ヲ負ハザルヲ得ナクナル原因ノ一ツトナレリ。"},
+        {text:"余ハ一切ノ責任ヲ負フ。部下ニ責任ハナシ",author:"東條英機（東京裁判ニテ・昭和二十一年）",explanation:"東京裁判ノ法廷ニテ、東條ハ戰爭責任ハ自分ニアリ天皇ニハナシト主張シタリ。翌昭和二十三年十二月二十三日ニ絞首刑ニ處セラレタリ。"}
+    ],
+    "山本五十六":[
+        {text:"ヤッテ見セ、言ッテ聞カセテ、サセテ見セ、褒メテヤラネバ、人ハ動カジ",author:"山本五十六（連合艦隊司令長官）",explanation:"上官ガ率先シテ手本ヲ示シ、理由ヲ説明シ、實際ニ經驗サセ、然シテ成果ヲ認ムルコトニテ初メテ人ハ動クトイフ卓越シタル人材育成哲學ヲ表スモノナリ。"},
+        {text:"我等ハ眠レル巨人ヲ目覺マセテシマヒシカモシレズ",author:"山本五十六（眞珠灣攻撃後・昭和十六年）",explanation:"眞珠灣攻撃ノ直後ニ語リタリトサルル言葉ナリ。日米開戰ニ當初反對シタリシ山本ハ、亞米利加ノ工業力ノ巨大ナルコトヲ誰ヨリモ理解シテヲリタリ。"},
+        {text:"百年兵ヲ養フハ、唯平和ヲ守ルタメナリ",author:"山本五十六（日米開戰前夜）",explanation:"日米戰爭囘避ヲ強ク主張シ續ケタル山本五十六ノ平和主義的軍事觀ヲ表ス言葉ナリ。"},
+        {text:"日米戰爭ハ日本ニ勝算ナシ。然レドモ命ゼラレナバ初年ハ暴レテ見セム",author:"山本五十六（近衞首相ヘノ書簡・昭和十五年）",explanation:"近衞文麿首相宛ノ書簡ニ認メタル言葉ナリ。亞米利加ノ國力ヲ知リ抜キタル山本ガ開戰ニ反對シツツモ、命ゼラレナバ全力ヲ盡クスト誓ヒタル矛盾ニ滿チタル心情ヲ吐露シタリ。"},
+        {text:"勝ニ不思議ノ勝アリ、負ニ不思議ノ負ナシ",author:"山本五十六（部下將校訓示）",explanation:"勝利ニハ偶然モアルガ、敗北ニハ必ズ原因ガアルトイフ警句ナリ。山本ノ合理的ナル思考ヲ示ス言葉ニシテ、現代ノ経営哲學ニモ引用サルル。"},
+        {text:"男ノ約束ハ命ヲ賭ケテ守ラネバナラヌ",author:"山本五十六（部下將校ヘノ言葉）",explanation:"武人トシテノ信義ヲ重ンジタル山本ノ人格ヲ示ス言葉ナリ。部下ヲ大切ニシ、約束ヲ必ズ守ルコトヲ信條トシタリ。"},
+        {text:"飛行機ガ戰爭ノ主役トナル時代ガ來ル。海軍モ然リ",author:"山本五十六（航空主兵論・昭和初期）",explanation:"戰艦主義ガ主流ナリシ時代ニ、航空兵力ノ重要性ヲ早クカラ看破シタル先見性ヲ示ス言葉ナリ。眞珠灣攻撃ノ立案ニモ此ノ思想ガ根底ニアリ。"},
+        {text:"死ニ場所ハ海ノ上ト決メテヲル",author:"山本五十六（友人ヘノ書簡）",explanation:"昭和十八年四月十八日、ブーゲンビル島上空ニテ米軍機ノ待伏攻撃ヲ受ケ戰死シタリ。長官機撃墜ハ米軍ガ暗号解読ニヨリ行動予定ヲ知リタルガ故ナリ。自ラノ最期ヲ預言シタカノ如キ言葉ナリ。"}
+    ],
+    "山下奉文":[
+        {text:"YESカNOカ、何レカヲ答ヘヨ",author:"山下奉文（シンガポール陷落時・昭和十七年）",explanation:"昭和十七年二月十五日、英軍司令官パーシバル將軍トノ降伏交渉ニ於ケル言葉ナリ。馬來半島ヲ七十日ニテ縱斷シ「馬來ノ虎」ト呼バレタリ。"},
+        {text:"兵ハ拙速ヲ尊ブ。悠長ニヤリテハ勝機ヲ失フ",author:"山下奉文（馬來作戰・昭和十六年）",explanation:"自轉車部隊ヲ活用シタル機動戰「銀輪部隊」トシテ有名ニシテ、神速ノ進撃ガ勝利ノ鍵トナレリ。"},
+        {text:"將タル者ハ、常ニ部下ノ命ニ責任ヲ持タネバナラヌ",author:"山下奉文（フィリピン防衛作戰中）",explanation:"戰後、部下ニヨルマニラ虐殺事件ノ責任ヲ問ハレ處刑サレタルガ、山下自身ハ市街戰ヲ避クルヤウ命令シタリトサレ、今日デモ「山下裁判」ノ公正性ニハ議論ガ殘ル。"},
+        {text:"馬來ノ戰ヒハ補給ナキ兵士ノ意志ガ勝タセタリ",author:"山下奉文（馬來作戰回顧）",explanation:"山下部隊ハ彈藥ト燃料ノ不足ヲ抱ヘナガラモ、敵ヲ心理的ニ壓倒スル電撃作戰ニテシンガポールヲ陷落セシメタリ。英軍十三萬人ガ日本軍三萬五千人ニ降伏シタルハ軍事史上ノ驚異ナリ。"},
+        {text:"敵ノ強サヲ知レ。然シテ己ノ強サヲ信ゼヨ",author:"山下奉文（作戰訓示）",explanation:"冷靜ナル敵情判斷ト自軍ヘノ絶對的信頼トヲ同時ニ求メタル山下ノ指揮哲學ヲ示ス言葉ナリ。馬來作戰ニ於ケル英軍ノ守備力ヲ正確ニ見積モリタル上デ速攻ヲ選バウ。"},
+        {text:"戰場ニ於テ最モ重キハ、兵士ノ士氣ナリ",author:"山下奉文（フィリピン作戰訓示・昭和十九年）",explanation:"フィリピン防衛ニ於イテ米軍ノ絶對的物量ニ對シ、日本兵ノ士氣ヲ以テ对抗セントシタリ。最終的ニハ山中ニテ昭和二十年九月ニ降伏シタリ。"},
+        {text:"一將功ナリテ萬骨枯ル。此ノ言葉ヲ忘レルナ",author:"山下奉文（部下將校ヘノ訓示）",explanation:"唐ノ詩人曹松ノ詩句ヲ引キ、勝利ノ背後ニ無數ノ犠牲ガアルコトヲ部下ニ忘レサセマジトシタリ。マニラ陷落後ノ悲惨ナル戰闘ヲ最モ恐レタルガ故ノ言葉ナリ。"},
+        {text:"余ハ命令ニ從ヒ戰ヒタリ。裁カルルトモ悔ハナシ",author:"山下奉文（戰犯裁判ニテ・昭和二十年）",explanation:"昭和二十年十二月七日、マニラニテ絞首刑ニ處セラレタリ。山下裁判ハ指揮官責任ノ國際法的先例トシテ今日マデ議論ガ絶エズ、米最高裁判事ラトレッジ、マーフィーハ強ク反對意見ヲ述ベタリ。"}
+    ],
+    "乃木希典":[
+        {text:"旅順ノ山河ハヤガテ我ガ腕ニ歸スベシ",author:"乃木希典（旅順攻略戰・明治三十七年）",explanation:"日露戰爭最大ノ激戰・旅順攻略戰ニ於テ第三軍司令官ガ示シタル決意ナリ。二人ノ息子ヲ含ム多數ノ犠牲者ヲ出シ二百三高地ヲ占領シタリ。"},
+        {text:"武士ハ食ハネド高楊枝。困難ニ遭ヒテモ誇リヲ失ヒテハナラヌ",author:"乃木希典（教育者トシテ）",explanation:"學習院院長トシテ皇族・華族ノ子弟ニ説キタル武士道精神ナリ。質素儉約ト質實剛健ヲ實踐シタリ。"},
+        {text:"明治天皇ニ殉ズルハ今日ヲ置イテ外ニアルマイ",author:"乃木希典（明治天皇大葬日・明治四十五年）",explanation:"明治四十五年九月十三日、殉死直前ノ遺書ノ一節ナリ。夏目漱石「こころ」ノ題材トナレリ。"},
+        {text:"息子ノ墓前ニ詣デルコト能ハヌ将タル身ノ恥ヲ知レ",author:"乃木希典（旅順攻略後・明治三十八年）",explanation:"旅順攻略ニテ二人ノ息子、勝典・保典ヲ失ヒタル乃木ハ、明治天皇ニ謝罪ノ言葉ヲ呈シタリ。天皇ハ「汝ノ功ハ汝ノ子ノ命ニ勝レリ」ト慰メ、乃木ノ辞表ヲ退ケタリ。"},
+        {text:"軍人ハ死ヲ恐レズシテ初メテ軍人タリ得ル",author:"乃木希典（學習院訓示）",explanation:"學習院ニテ皇族子弟ニ繰リ返シ説キタル言葉ナリ。自ラノ死生観ヲ若人ニ傳ヘントシタル乃木ノ教育哲學ノ中核ヲナスモノナリ。"},
+        {text:"城山ノ一戰、西郷先生ノ散リシハ武士ノ鑑ナリ",author:"乃木希典（西南戰爭後ノ述懐）",explanation:"西南戰爭ニテ西郷隆盛軍ト戰ヒシ乃木ハ、西郷ノ死ヲ深ク哀惜シテヲリタリ。後ニ殉死スル乃木ノ行動ノ原型ガ此ノ西郷崇拝ニアリトモ言ハルル。"},
+        {text:"露西亜ノ兵ハ勇敢ナリ。然レドモ日本ノ兵ハ更ニ勇敢ナリ",author:"乃木希典（旅順陷落後・明治三十八年）",explanation:"旅順陷落後、ステッセル將軍ト會見シタル際ノ言葉ナリ。乃木ハ敗者ノステッセルヲ武人トシテ礼遇シ、サーベルヲ返シタリ。此ノ振舞ヒハ世界的ニ騎士道ノ鑑トシテ称賛サレタリ。"},
+        {text:"余ハ明治天皇ノ御代ニ生マレ、明治天皇ノ御代ニ死スルヲ本懐トス",author:"乃木希典（殉死ノ遺書・明治四十五年）",explanation:"明治四十五年九月十三日、明治天皇ノ御大葬ノ砲声ヲ合図ニ妻静子ト共ニ割腹シテ殉死シタリ。乃木ノ死ハ日本中ニ衝撃ヲ与ヘ、明治精神ノ終焉ヲ象徴スルトモ言ハルル。"}
+    ],
+    "牟田口廉也":[
+        {text:"インパールエノ道ハ、我ガ軍ノ意志ガ切リ開ク",author:"牟田口廉也（インパール作戰・昭和十九年）",explanation:"補給不十分ナルママ強行サレ約三萬人ノ戰死者ヲ出ス日本陸軍史上最大ノ惨敗トナレリ。"},
+        {text:"兵士ハ食ハナクテモ戰ヘル。精神力アラバ補給ハ不要ナリ",author:"牟田口廉也（インパール作戰立案時）",explanation:"精神力ヲ物質的條件ヨリ優先スル當時ノ日本陸軍思想ヲ極端ニ體現シタル人物トシテ歴史的ニ評價サレテヲリ。"},
+        {text:"失敗ノ責任ハ現地指揮官ニアリ。余ノ作戰立案ハ完璧ナリキ",author:"牟田口廉也（敗戰後ノ囘顧）",explanation:"晩年マデ自己辯護ヲ貫キ、佐藤師團長ノ獨斷撤退ヲ批判シ續ケタリ。"},
+        {text:"チンドウィン河ヲ渡レバ後ハナシ。前進アルノミ",author:"牟田口廉也（作戰命令・昭和十九年三月）",explanation:"インパール作戰開始時ノ言葉ナリ。退路ヲ絶チ前進ノミヲ命ジタル此ノ姿勢ガ、後退ニ轉ジタル際ノ壊滅的損害ヲ招キタリ。"},
+        {text:"皇軍兵士ハ草木ヲ食ヒテモ戰フコトガ出來ル",author:"牟田口廉也（第十五軍司令部ヘノ訓示）",explanation:"インパール作戰ニ於ケル補給崩壊ノ中、飢餓ト病ニ苦シム將兵ニ精神力デ克服セヨトノ命令ヲ繰リ返シタリ。此ノ言葉ハ後ニ「白骨街道」ト呼バルルコハイマ路ノ惨状ノ元凶トシテ語リ継ガレテヲリ。"},
+        {text:"余ノ作戰ニ反對スル者ハ皆敵ナリ",author:"牟田口廉也（師團長会議ニテ）",explanation:"インパール作戰ニ反對シタル佐藤幸德師團長、山内正文師團長ヲ更迭シタリ。進言ヲ聞カザル独善的指揮ガ惨敗ヲ招キタル最大ノ原因トシテ、今日モ軍事史上最悪ノ指揮官ノ一人ニ擧ゲラルル。"},
+        {text:"インパールハ必ズ落ツ。余ヲ信ゼヨ",author:"牟田口廉也（作戰開始前ノ演説・昭和十九年）",explanation:"昭和十九年三月ノ作戰開始時、自信満々ニ語リタル言葉ナリ。实際ニハ七月ニ作戰中止ガ命ゼラレ、インパールハ遂ニ落チズ、撤退途上ニ三萬人以上ガ命ヲ落トシタリ。"},
+        {text:"歴史ハ必ズ余ヲ正当ニ評価スル日ガ来ル",author:"牟田口廉也（晩年ノ述懐・昭和四十年代）",explanation:"晩年マデ自説ノ正当性ヲ主張シ続ケタル牟田口ハ、昭和四十一年ニ死去シタリ。現代ノ評価ハ依然トシテ「最悪ノ作戰指揮官」ノ一人ナリ。"}
+    ],
+    "今村均":[
+        {text:"將帥ハ、先ヅ部下ノ信頼ヲ得ネバナラヌ。命令ハ信頼ノ上ニノミ生キル",author:"今村均（ラバウル守備司令官）",explanation:"部下將兵ノ生活改善・食糧自給ニ積極的ニ取リ組ミ、住民トノ友好關係ヲ築キタル「名將」ナリ。"},
+        {text:"占領地ノ民衆ハ、征服者デハナク指導者ヲ求メテヲル",author:"今村均（ジャワ占領行政・昭和十七年）",explanation:"インドネシアノ民族感情ヲ尊重シタル柔軟ナル行政ヲ實施シ、戰後モ現地住民ヨリ高ク評價サレタリ。"},
+        {text:"戰爭ガ終ハリテモ、部下ヲ見捨ツルコトハ出來ヌ",author:"今村均（戰犯裁判時・昭和二十三年）",explanation:"和蘭ノ軍事裁判ニテ有罪判決後、部下達ト同ジマヌス島ノ刑務所ニ自ラ収監サルルコトヲ望ミタル「部下思ヒノ將軍」ナリ。"},
+        {text:"征服者ノ傲慢ハ、必ズヤ民心ヲ失ハシメ、最後ノ敗北ヲ招ク",author:"今村均（ジャワ軍政ノ訓示・昭和十七年）",explanation:"ジャワ占領後、部下将校ニ住民ヘノ横暴ヲ厳ニ戒メタル訓示ナリ。今村ノ温情的軍政ハインドネシア独立後モ高ク評価サレ、スカルノ大統領カラモ感謝サレタリ。"},
+        {text:"食ハナケレバ戰ヘヌ。補給ヲ軽ンズル指揮官ハ兵ヲ殺ス",author:"今村均（ラバウル自活農場建設ニ際シテ）",explanation:"ラバウル包囲下ニテ今村ハ兵士自ラニヨル農耕・食糧自給ヲ實施シタリ。牟田口ガ補給ヲ軽視シテ兵ヲ餓死サセタルトハ対照的ニ、今村ノ下デハ飢餓ニヨル死者ハ极メテ少ナカリキ。"},
+        {text:"勝テル時ノミ將軍ニアラズ。敗レタル後コソ眞ノ将軍タルカヲ問ハルル",author:"今村均（回顧録ニテ）",explanation:"戰後、マヌス島ノ刑務所ニ服役中ノ今村ガ記シタル言葉ナリ。苦境ニ在リテモ部下ヲ思ヒ続ケタル今村ノ生涯ヲ象徴スル言葉トシテ知ラルル。"},
+        {text:"余ハ自ラ進ンデマヌス島ニ赴キ、部下ト同ジ罰ヲ受ケル所存ナリ",author:"今村均（オランダ法廷ヘノ申出・昭和二十三年）",explanation:"部下将校ラガマヌス島ノ戰犯刑務所ニ収監サレタルヲ知リ、今村ハ自ラ申シ出テ同島ニ移送サレタリ。此ノ行動ハ日本軍将校ノ中デモ極メテ稀ナル利他的行為トシテ語リ継ガレテヲリ。"},
+        {text:"戰ニ勝ツコトヨリモ、平和ヲ作ルコトノ方ガ難シイ",author:"今村均（戰後ノ著作ニテ）",explanation:"昭和三十年代ニ著シタル回顧録ノ一節ナリ。戰場デ戰ヒ、刑務所ニ服役シ、戰後ヲ生キタル今村ノ深イ省察ヲ示ス言葉ニシテ、生涯ヲ通ジテ平和ノ尊サヲ訴ヘ続ケタリ。"}
+    ]
+};
+
+const quotesModern = {
+    "東條英機":[
+        {text:"生きて捕虜の恥をうけず、死んで汚名を残すな",author:"東條英機（戦陣訓・1941年）",explanation:"1941年に発令した「戦陣訓」の中核をなす言葉です。捕虜を恥とし、降伏より自決を選ぶよう命じました。東條自身は終戦後に自殺を図りましたが未遂に終わり、A級戦犯として処刑されました。"},
+        {text:"戦争は政治の延長だ。政治が失敗したとき、軍が登場する",author:"東條英機（首相・陸相在任中）",explanation:"首相就任後、陸相・内相・参謀総長を兼任する異例の権力集中を行い、軍と政治を一体化させました。"},
+        {text:"大東亜共栄圏の建設は日本の使命だ",author:"東條英機（首相演説・1942年）",explanation:"欧米の植民地支配からアジアを解放するという理想を掲げましたが、現実には日本の軍事支配の体制でした。"},
+        {text:"国家の存亡をかけた今次の大戦、われわれは一億一心で邁進しなければならない",author:"東條英機（首相就任演説・1941年）",explanation:"首相就任直後の演説で、日米開戦を念頭に国民の総動員を呼びかけた言葉です。「一億一心」は当時の戦時スローガンになりました。"},
+        {text:"軍人は命令に従うことが最大の美徳だ",author:"東條英機（陸軍大臣訓示・1940年）",explanation:"陸軍大臣として将兵に繰り返し説いた言葉です。絶対服従の軍隊文化を体現し、後にインパール作戦のような無謀な命令も止められない一因となりました。"},
+        {text:"日本は戦う。この決意は揺るぎない",author:"東條英機（開戦前夜の閣議・1941年）",explanation:"1941年12月1日の御前会議での言葉です。対米英開戦の最終決定が下された歴史的瞬間に語られ、日本を破滅の道へと導きました。"},
+        {text:"天皇陛下の威光の下、皇軍は必勝を期す",author:"東條英機（大東亜戦争開戦詔書奉読式・1941年）",explanation:"開戦詔書奉読式で述べた言葉です。天皇の権威を笠に着た言辞は、後に東京裁判で東條が全責任を負わざるを得なくなる原因の一つとなりました。"},
+        {text:"私はすべての責任を負う。部下に責任はない",author:"東條英機（東京裁判にて・1946年）",explanation:"東京裁判の法廷で、東條は戦争責任は自分にあり天皇にはないと主張しました。翌1948年12月23日に絞首刑に処されました。"}
+    ],
+    "山本五十六":[
+        {text:"やってみせ、言って聞かせて、させてみせ、褒めてやらねば、人は動かじ",author:"山本五十六（連合艦隊司令長官）",explanation:"上司が率先して手本を見せ、理由を説明し、実際に経験させ、成果を認めることで初めて人は動くという、現代のリーダーシップ論にも通じる哲学です。"},
+        {text:"私たちは眠れる巨人を目覚めさせてしまったかもしれない",author:"山本五十六（真珠湾攻撃後・1941年）",explanation:"日米開戦に当初反対した山本は、アメリカの工業力の巨大さを誰よりも理解していました。"},
+        {text:"百年間兵を養うのは、ただ平和を守るためだけだ",author:"山本五十六（日米開戦前夜）",explanation:"日米戦争回避を強く主張し続けた平和主義的軍事観を表す言葉です。"},
+        {text:"日米戦争に日本の勝算はない。しかし命じられたなら、初年は暴れてみせよう",author:"山本五十六（近衛首相への書簡・1940年）",explanation:"近衛文麿首相宛の書簡に書いた言葉です。アメリカの国力を知り抜いた山本が開戦に反対しながらも、命じられたなら全力を尽くすと誓った矛盾に満ちた心情の吐露です。"},
+        {text:"勝ちに不思議の勝ちあり、負けに不思議の負けなし",author:"山本五十六（部下将校訓示）",explanation:"勝利には偶然もあるが、敗北には必ず原因があるという警句です。山本の合理的な思考を示す言葉で、現代の経営哲学にも引用されます。"},
+        {text:"男の約束は命をかけて守らなければならない",author:"山本五十六（部下将校への言葉）",explanation:"武人としての信義を重んじた山本の人格を示す言葉です。部下を大切にし、約束を必ず守ることを信条としていました。"},
+        {text:"飛行機が戦争の主役となる時代が来る。海軍もそうだ",author:"山本五十六（航空主兵論・昭和初期）",explanation:"戦艦主義が主流だった時代に、航空兵力の重要性を早くから見抜いた先見性を示す言葉です。真珠湾攻撃の立案にもこの思想が根底にありました。"},
+        {text:"死に場所は海の上と決めている",author:"山本五十六（友人への書簡）",explanation:"1943年4月18日、ブーゲンビル島上空で米軍機の待ち伏せ攻撃を受け戦死しました。長官機撃墜は米軍が暗号解読により行動予定を知っていたためです。自らの最期を予言したかのような言葉です。"}
+    ],
+    "山下奉文":[
+        {text:"YESかNOか、どちらかを答えよ",author:"山下奉文（シンガポール陥落時・1942年）",explanation:"英軍司令官パーシバル将軍との降伏交渉の言葉です。マレー半島を70日で縦断し「マレーの虎」と呼ばれました。"},
+        {text:"戦いでは速さが大事だ。じっくりやっていては勝機を失う",author:"山下奉文（マレー作戦・1941年）",explanation:"自転車部隊「銀輪部隊」による電撃的な進撃が勝利の鍵となりました。"},
+        {text:"将たる者は、常に部下の命に責任を持たなければならない",author:"山下奉文（フィリピン防衛作戦中）",explanation:"部下によるマニラ虐殺の責任を問われ処刑されましたが、「山下裁判」の公正性には今日も議論が残ります。"},
+        {text:"マレーの戦いは補給なき兵士の意志が勝たせた",author:"山下奉文（マレー作戦回顧）",explanation:"山下部隊は弾薬と燃料の不足を抱えながらも、敵を心理的に圧倒する電撃作戦でシンガポールを陥落させました。英軍13万人が日本軍3万5千人に降伏したのは軍事史上の驚異です。"},
+        {text:"敵の強さを知れ。そして自軍の強さを信ぜよ",author:"山下奉文（作戦訓示）",explanation:"冷静な敵情判断と自軍への絶対的信頼を同時に求めた山下の指揮哲学を示す言葉です。マレー作戦での英軍の守備力を正確に見積もった上で速攻を選びました。"},
+        {text:"戦場で最も重要なのは、兵士の士気だ",author:"山下奉文（フィリピン作戦訓示・1944年）",explanation:"フィリピン防衛において米軍の絶対的物量に対し、日本兵の士気で対抗しようとしました。最終的には山中で1945年9月に降伏しました。"},
+        {text:"一将功なりて万骨枯る。この言葉を忘れるな",author:"山下奉文（部下将校への訓示）",explanation:"唐の詩人曹松の詩句を引き、勝利の背後に無数の犠牲があることを部下に忘れさせまいとしました。マニラ陥落後の悲惨な戦闘を最も恐れたがゆえの言葉です。"},
+        {text:"私は命令に従い戦った。裁かれるとも悔いはない",author:"山下奉文（戦犯裁判にて・1945年）",explanation:"1945年12月7日、マニラで絞首刑に処されました。山下裁判は指揮官責任の国際法的先例として今日まで議論が絶えず、米最高裁判事ラトレッジ、マーフィーは強く反対意見を述べました。"}
+    ],
+    "乃木希典":[
+        {text:"旅順の山河はやがて我が手に帰すだろう",author:"乃木希典（旅順攻略戦・1904年）",explanation:"日露戦争の旅順攻略戦で二人の息子を含む多数の犠牲を出しながらも二百三高地を占領しました。"},
+        {text:"武士は食わねど高楊枝。困難に遭っても誇りを失ってはならない",author:"乃木希典（教育者として）",explanation:"学習院院長として皇族・華族の子弟に説いた武士道精神です。"},
+        {text:"明治天皇に殉ずるなら今日をおいて他にない",author:"乃木希典（明治天皇大葬日・1912年）",explanation:"殉死直前の遺書の一節です。夏目漱石「こころ」の題材となりました。"},
+        {text:"息子の墓前に参れぬ将の身の恥を知れ",author:"乃木希典（旅順攻略後・1905年）",explanation:"旅順攻略で二人の息子、勝典・保典を失った乃木は、明治天皇に謝罪の言葉を呈しました。天皇は「汝の功は汝の子の命に勝れり」と慰め、乃木の辞表を退けました。"},
+        {text:"軍人は死を恐れずして初めて軍人たり得る",author:"乃木希典（学習院訓示）",explanation:"学習院で皇族子弟に繰り返し説いた言葉です。自らの死生観を若人に伝えようとした乃木の教育哲学の中核をなすものです。"},
+        {text:"城山の一戦、西郷先生の散りしは武士の鑑だ",author:"乃木希典（西南戦争後の述懐）",explanation:"西南戦争で西郷隆盛軍と戦った乃木は、西郷の死を深く哀惜していました。後に殉死する乃木の行動の原型がこの西郷崇拝にあるとも言われています。"},
+        {text:"ロシアの兵は勇敢だ。しかし日本の兵はさらに勇敢だ",author:"乃木希典（旅順陥落後・1905年）",explanation:"旅順陥落後、ステッセル将軍と会見した際の言葉です。乃木は敗者のステッセルを武人として礼遇し、サーベルを返しました。この振る舞いは世界的に騎士道の鑑として称賛されました。"},
+        {text:"私は明治天皇の御代に生まれ、明治天皇の御代に死ぬことを本懐とする",author:"乃木希典（殉死の遺書・1912年）",explanation:"1912年9月13日、明治天皇の御大葬の砲声を合図に妻静子とともに割腹して殉死しました。乃木の死は日本中に衝撃を与え、明治精神の終焉を象徴するとも言われています。"}
+    ],
+    "牟田口廉也":[
+        {text:"インパールへの道は、我が軍の意志が切り開く",author:"牟田口廉也（インパール作戦・1944年）",explanation:"補給計画が不十分なまま強行され、約3万人の戦死者を出す日本陸軍史上最大の惨敗となりました。"},
+        {text:"兵士は食わなくても戦える。精神力があれば補給は不要だ",author:"牟田口廉也（インパール作戦立案時）",explanation:"精神力を物質的条件より優先する思想を極端に体現した人物として歴史的に評価されています。"},
+        {text:"失敗の責任は現地の指揮官にある。私の作戦立案は完璧だった",author:"牟田口廉也（敗戦後の回顧）",explanation:"晩年まで自己弁護を続け、佐藤師団長の独断撤退を批判し続けました。"},
+        {text:"チンドウィン河を渡れば後はない。前進あるのみだ",author:"牟田口廉也（作戦命令・1944年3月）",explanation:"インパール作戦開始時の言葉です。退路を断ち前進のみを命じたこの姿勢が、後退に転じた際の壊滅的損害を招きました。"},
+        {text:"皇軍兵士は草木を食べても戦うことができる",author:"牟田口廉也（第十五軍司令部への訓示）",explanation:"インパール作戦における補給崩壊の中、飢えと病に苦しむ将兵に精神力で克服せよと命令を繰り返しました。この言葉は後に「白骨街道」と呼ばれるコヒマ路の惨状の元凶として語り継がれています。"},
+        {text:"私の作戦に反対する者はみな敵だ",author:"牟田口廉也（師団長会議にて）",explanation:"インパール作戦に反対した佐藤幸徳師団長、山内正文師団長を更迭しました。進言を聞かない独善的指揮が惨敗を招いた最大の原因として、今日も軍事史上最悪の指揮官の一人に挙げられます。"},
+        {text:"インパールは必ず落ちる。私を信じよ",author:"牟田口廉也（作戦開始前の演説・1944年）",explanation:"1944年3月の作戦開始時、自信満々に語った言葉です。実際には7月に作戦中止が命じられ、インパールは遂に落ちず、撤退途上に3万人以上が命を落としました。"},
+        {text:"歴史は必ず私を正当に評価する日が来る",author:"牟田口廉也（晩年の述懐・1960年代）",explanation:"晩年まで自説の正当性を主張し続けた牟田口は、1966年に死去しました。現代の評価は依然として「最悪の作戦指揮官」の一人のままです。"}
+    ],
+    "今村均":[
+        {text:"将帥はまず部下の信頼を得なければならない。命令は信頼の上にのみ生きる",author:"今村均（ラバウル守備司令官）",explanation:"部下将兵の生活改善・食糧自給に積極的に取り組み、住民との友好関係を築いた名将です。"},
+        {text:"占領地の民衆は、征服者ではなく指導者を求めている",author:"今村均（ジャワ占領行政・1942年）",explanation:"インドネシアの民族感情を尊重した柔軟な行政を実施し、戦後も現地住民から高く評価されました。"},
+        {text:"戦争が終わっても、部下を見捨てることはできない",author:"今村均（戦犯裁判時・1948年）",explanation:"オランダの軍事裁判で有罪判決後、部下たちと同じマヌス島の刑務所への収監を自ら望んだ「部下思いの将軍」です。"},
+        {text:"征服者の傲慢は、必ずや民心を失わせ、最後の敗北を招く",author:"今村均（ジャワ軍政の訓示・1942年）",explanation:"ジャワ占領後、部下将校に住民への横暴を厳しく戒めた訓示です。今村の温情的軍政はインドネシア独立後も高く評価され、スカルノ大統領からも感謝されました。"},
+        {text:"食わなければ戦えない。補給を軽んじる指揮官は兵を殺す",author:"今村均（ラバウル自活農場建設に際して）",explanation:"ラバウル包囲下で今村は兵士自らによる農耕・食糧自給を実施しました。牟田口が補給を軽視して兵を餓死させたのとは対照的に、今村の下では飢餓による死者は極めて少なかったです。"},
+        {text:"勝てるときだけ将軍ではない。敗れた後こそ真の将軍かを問われる",author:"今村均（回顧録にて）",explanation:"戦後、マヌス島の刑務所に服役中の今村が記した言葉です。苦境にあっても部下を思い続けた今村の生涯を象徴する言葉として知られています。"},
+        {text:"私は自ら進んでマヌス島に赴き、部下と同じ罰を受ける所存だ",author:"今村均（オランダ法廷への申出・1948年）",explanation:"部下将校らがマヌス島の戦犯刑務所に収監されたことを知り、今村は自ら申し出て同島に移送されました。この行動は日本軍将校の中でも極めて稀な利他的行為として語り継がれています。"},
+        {text:"戦に勝つことよりも、平和を作ることの方が難しい",author:"今村均（戦後の著作にて）",explanation:"1950年代に著した回顧録の一節です。戦場で戦い、刑務所に服役し、戦後を生きた今村の深い省察を示す言葉で、生涯を通じて平和の尊さを訴え続けました。"}
+    ]
+};
+
+function getQuotes() { return isModernMode ? quotesModern : quotesOriginal; }
+
+// ────────────────────────────────────────
+// 現代語訳トグル
+// ────────────────────────────────────────
+translateBtn.addEventListener("click", () => {
+    isModernMode = !isModernMode;
+    translateBtn.classList.toggle("active", isModernMode);
+    translateBtn.textContent = isModernMode ? "📜 旧字体に戻す" : "🔤 現代語訳";
+    const t = isModernMode ? HEADER_NEW : HEADER_OLD;
+    document.getElementById("header-text-1").textContent = t;
+    document.getElementById("header-text-2").textContent = t;
+});
+
+// ────────────────────────────────────────
+// 画像読み込み & ルーレット描画
+// ────────────────────────────────────────
+function loadImages() {
+    loadedImages = new Array(items.length).fill(null);
+    let loadCount = 0;
+    const validCount = imageFiles.filter(f => f).length;
+    if (validCount === 0) { drawRoulette(); return; }
+    imageFiles.forEach((file, index) => {
+        if (!file) return;
+        const img = new Image();
+        img.onload  = () => { loadedImages[index] = img; if (++loadCount >= validCount) drawRoulette(); };
+        img.onerror = () => { if (++loadCount >= validCount) drawRoulette(); };
+        img.src = file;
+    });
+}
+
+function drawRoulette() {
+    const W = canvas.width, H = canvas.height;
+    if (!W || !H) return;
+    const cx = W/2, cy = H/2, R = W/2 - Math.max(2, W*0.01);
+    const n = items.length;
+    if (n === 0) return;
+    const arc = Math.PI*2/n;
+    ctx.clearRect(0,0,W,H);
+    items.forEach((item,i) => {
+        const angle = i*arc;
+        ctx.beginPath();
+        ctx.fillStyle = colors[i]||"#8b0000";
+        ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,R,angle,angle+arc);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(cx,cy);
+        ctx.lineTo(cx+R*Math.cos(angle), cy+R*Math.sin(angle));
+        ctx.stroke();
+        if (loadedImages[i]?.complete && loadedImages[i].width>0) {
+            ctx.save();
+            ctx.translate(cx,cy); ctx.rotate(angle+arc/2);
+            ctx.beginPath(); ctx.arc(R*.52,0,R*.18,0,Math.PI*2); ctx.clip();
+            const s=R*.36; ctx.drawImage(loadedImages[i],R*.52-s/2,-s/2,s,s);
+            ctx.restore();
+        }
+        ctx.save();
+        ctx.translate(cx,cy); ctx.rotate(angle+arc/2);
+        ctx.textAlign="right"; ctx.fillStyle="#fff";
+        ctx.font=`bold ${Math.floor(R*.075)}px 'Hiragino Mincho ProN','Yu Mincho',serif`;
+        ctx.strokeStyle="#1a0000"; ctx.lineWidth=3;
+        const tx=R*.88;
+        ctx.strokeText(item,tx,6); ctx.fillText(item,tx,6);
+        ctx.restore();
+    });
+}
+
+// ────────────────────────────────────────
+// 回転
+// ────────────────────────────────────────
+btn.addEventListener("click", startSpin);
+function startSpin() {
+    btn.disabled = true;
+    charImg.style.animationDuration = `${arrowSpeed}s`;
+    charImg.classList.add("is-spinning");
+    document.getElementById("result-display").classList.remove("show");
+    document.getElementById("explanation-display").classList.remove("show");
+    video.currentTime = 0; video.muted = false;
+    video.play().catch(()=>{});
+
+    const extra = 360*8 + Math.random()*360;
+    currentRotation += extra;
+    canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+    setTimeout(() => {
+        btn.disabled = false;
+        charImg.classList.remove("is-spinning");
+        charImg.style.transform = "translateY(-50%)";
+
+        const seg = 360/items.length;
+        const adj = (currentRotation%360+360)%360;
+        const idx = Math.floor(((360-adj)%360)/seg)%items.length;
+        const winner = items[idx];
+        const qs = getQuotes()[winner]||[{text:`${winner}が選ばれました！`,author:winner,explanation:"解説は登録されていません。"}];
+        const q  = qs[Math.floor(Math.random()*qs.length)];
+
+        if (showQuote) {
+            document.getElementById("result-quote").textContent  = `「${q.text}」`;
+            document.getElementById("result-author").textContent = "─ "+q.author;
+            document.getElementById("result-display").classList.add("show");
+        }
+        if (showExplanation) {
+            document.getElementById("explanation-title").textContent   = "名言解説";
+            document.getElementById("explanation-content").textContent = q.explanation;
+            document.getElementById("explanation-display").classList.add("show");
+        }
+    }, spinDuration);
+}
+
+// ────────────────────────────────────────
+// 音量・速度
+// ────────────────────────────────────────
+video.volume = +volumeSlider.value;
+volumeSlider.addEventListener("input", e => { video.volume = omiVideo.volume = +e.target.value; });
+arrowSpeedSlider.addEventListener("input", e => {
+    arrowSpeed = +e.target.value;
+    charImg.style.animationDuration = `${arrowSpeed}s`;
+});
+
+// ────────────────────────────────────────
+// 近江住宅
+// ────────────────────────────────────────
+function playOmi() {
+    omiVideo.style.display="block"; omiVideo.currentTime=0;
+    omiVideo.volume=+volumeSlider.value;
+    omiVideo.play().catch(()=>alert("omimusic.mp4 が見つかりません。"));
+    omiVideo.onended=()=>{ omiVideo.style.display="none"; };
+}
+omiBtn.addEventListener("click", playOmi);
+document.addEventListener("keydown", e=>{
+    if(e.key==="F9")  { e.preventDefault(); playOmi(); }
+    if(e.key==="F10" && !btn.disabled){ e.preventDefault(); startSpin(); }
+});
+
+// ────────────────────────────────────────
+// パネル開閉
+// ────────────────────────────────────────
+function closeAll() {
+    settingsPanel.classList.remove("show");
+    hamburgerMenu.classList.remove("show");
+    hamburgerToggle.classList.remove("active");
+}
+settingsToggle.addEventListener("click", ()=>{
+    const willShow = !settingsPanel.classList.contains("show");
+    closeAll(); if(willShow) settingsPanel.classList.add("show");
+});
+hamburgerToggle.addEventListener("click", ()=>{
+    const willShow = !hamburgerMenu.classList.contains("show");
+    closeAll();
+    if(willShow){ hamburgerMenu.classList.add("show"); hamburgerToggle.classList.add("active"); }
+});
+document.getElementById("hamburger-close").addEventListener("click",()=>{ hamburgerMenu.classList.remove("show"); hamburgerToggle.classList.remove("active"); });
+document.getElementById("settings-close").addEventListener("click", ()=>settingsPanel.classList.remove("show"));
+
+// ────────────────────────────────────────
+// ファイルアップロード / 速度
+// ────────────────────────────────────────
+document.getElementById("bg-video-upload").addEventListener("change",e=>{
+    const f=e.target.files[0]; if(!f) return;
+    video.src=URL.createObjectURL(f); video.load(); video.play().catch(()=>{});
+});
+document.getElementById("pointer-upload").addEventListener("change",e=>{
+    const f=e.target.files[0]; if(!f) return;
+    charImg.src=URL.createObjectURL(f);
+});
+document.getElementById("spin-duration").addEventListener("input",e=>{
+    spinDuration=+e.target.value*1000;
+    canvas.style.transition=`transform ${spinDuration/1000}s cubic-bezier(.15,0,.15,1)`;
+});
+
+// ────────────────────────────────────────
+// フォントサイズスライダー
+// ────────────────────────────────────────
+document.getElementById("header-font-size").addEventListener("input",e=>
+    document.querySelectorAll(".scrolling-text span").forEach(el=>el.style.fontSize=`${e.target.value}rem`));
+document.getElementById("quote-font-size").addEventListener("input",e=>
+    document.querySelector(".result-quote").style.fontSize=`${e.target.value}rem`);
+document.getElementById("author-font-size").addEventListener("input",e=>
+    document.querySelector(".result-author").style.fontSize=`${e.target.value}rem`);
+document.getElementById("explanation-font-size").addEventListener("input",e=>
+    document.querySelector(".explanation-content").style.fontSize=`${e.target.value}rem`);
+
+// ────────────────────────────────────────
+// お問い合わせ
+// ────────────────────────────────────────
+document.getElementById("contact-submit").addEventListener("click",()=>{
+    const name=document.getElementById("contact-name").value;
+    const email=document.getElementById("contact-email").value;
+    const msg=document.getElementById("contact-message").value;
+    if(!msg.trim()){ alert("お問い合わせ内容を入力してください。"); return; }
+    window.location.href=`mailto:nanald1211@gmail.com?subject=お問い合わせ&body=お名前: ${name}%0Aメール: ${email}%0A%0A内容:%0A${encodeURIComponent(msg)}`;
+    document.getElementById("contact-name").value="";
+    document.getElementById("contact-email").value="";
+    document.getElementById("contact-message").value="";
+    alert("メールクライアントが起動します。送信を完了してください。");
+});
+
+// ────────────────────────────────────────
+// 項目リスト
+// ────────────────────────────────────────
+function renderItemList() {
+    const list = document.getElementById("item-list");
+    list.innerHTML = "";
+    items.forEach((item,idx)=>{
+        const d = document.createElement("div");
+        d.className = "item-entry";
+        d.innerHTML = `
+          <div class="item-entry-header">
+            <span style="color:#fff;font-weight:bold">${idx+1}. ${item}</span>
+            <button class="item-remove" data-i="${idx}">削除</button>
+          </div>
+          <label class="settings-label">名前</label>
+          <input type="text" class="settings-input" data-i="${idx}" data-t="name" value="${item}">
+          <label class="settings-label">色</label>
+          <div class="color-picker-wrapper">
+            <input type="color" class="color-picker" data-i="${idx}" value="${colors[idx]||'#8b0000'}">
+            <span style="color:var(--cream);font-size:.8rem">${colors[idx]||'#8b0000'}</span>
+          </div>
+          <label class="settings-file-label">画像を変更
+            <input type="file" class="settings-file-input" data-i="${idx}" accept="image/*">
+          </label>`;
+        list.appendChild(d);
+    });
+    list.querySelectorAll(".item-remove").forEach(b=>b.addEventListener("click",e=>{
+        const i=+e.target.dataset.i;
+        items.splice(i,1); colors.splice(i,1); imageFiles.splice(i,1); loadedImages.splice(i,1);
+        renderItemList(); drawRoulette();
+    }));
+    list.querySelectorAll("input[data-t='name']").forEach(inp=>inp.addEventListener("input",e=>{
+        items[+e.target.dataset.i]=e.target.value; drawRoulette();
+    }));
+    list.querySelectorAll(".color-picker").forEach(p=>p.addEventListener("input",e=>{
+        const i=+e.target.dataset.i; colors[i]=e.target.value;
+        e.target.nextElementSibling.textContent=e.target.value; drawRoulette();
+    }));
+    list.querySelectorAll("input[type=file][data-i]").forEach(inp=>inp.addEventListener("change",e=>{
+        const i=+e.target.dataset.i, f=e.target.files[0]; if(!f) return;
+        const img=new Image(); img.onload=()=>{ loadedImages[i]=img; drawRoulette(); };
+        img.src=URL.createObjectURL(f);
+    }));
+}
+
+document.getElementById("add-item-btn").addEventListener("click",()=>{
+    items.push(`項目${items.length+1}`); colors.push("#8b0000"); imageFiles.push(""); loadedImages.push(null);
+    renderItemList(); drawRoulette();
+});
+document.getElementById("reset-btn").addEventListener("click",()=>{
+    if(!confirm("すべての設定を初期化しますか？")) return;
+    items=[...defaultData.items]; colors=[...defaultData.colors]; imageFiles=[...defaultData.imageFiles];
+    document.getElementById("spin-duration").value=4; spinDuration=4000;
+    canvas.style.transition="transform 4s cubic-bezier(.15,0,.15,1)";
+    video.src="dainiti.mp4"; video.load(); video.play().catch(()=>{});
+    charImg.src="arrow.png";
+    renderItemList(); loadImages();
+});
+
+// ────────────────────────────────────────
+// 初期化
+// ────────────────────────────────────────
+showStartupQuote();
+loadImages();
+renderItemList();
+</script>
+</body>
+</html>
