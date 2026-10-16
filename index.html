@@ -368,6 +368,75 @@ html, body {
 ruby { ruby-align: center; }
 rt { font-size: .38em; letter-spacing: 1px; color: rgba(255,220,180,.9); font-weight: normal; }
 
+/* ══════════ 【追加】昔の映画フィルム風エフェクト（起動ポップアップ） ══════════ */
+/* 画面全体: 明滅 + セピア寄り（コマ落ちのようにステップ再生） */
+.startup-quote {
+    animation: film-flicker .18s steps(1) infinite;
+}
+@keyframes film-flicker {
+    0%   { filter: sepia(.45) contrast(1.15) brightness(1.00); }
+    12%  { filter: sepia(.45) contrast(1.25) brightness(1.18); }
+    25%  { filter: sepia(.45) contrast(1.10) brightness(0.86); }
+    38%  { filter: sepia(.45) contrast(1.20) brightness(1.08); }
+    50%  { filter: sepia(.45) contrast(1.15) brightness(0.92); }
+    63%  { filter: sepia(.45) contrast(1.30) brightness(1.22); }
+    75%  { filter: sepia(.45) contrast(1.10) brightness(0.88); }
+    88%  { filter: sepia(.45) contrast(1.20) brightness(1.05); }
+    100% { filter: sepia(.45) contrast(1.15) brightness(1.00); }
+}
+/* 文字ブロック: ガクガク（コマ送りで位置・傾きがズレる） */
+.startup-quote-inner {
+    animation: film-jitter .5s steps(1) infinite;
+}
+@keyframes film-jitter {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    10%  { transform: translate(-2px, 1px) rotate(-.15deg); }
+    20%  { transform: translate(1px, -2px) rotate(.1deg); }
+    30%  { transform: translate(-1px, 2px) rotate(0deg); }
+    40%  { transform: translate(3px, 0) rotate(.2deg); }
+    50%  { transform: translate(0, -1px) rotate(-.1deg); }
+    60%  { transform: translate(-3px, 1px) rotate(.15deg); }
+    70%  { transform: translate(2px, 2px) rotate(-.2deg); }
+    80%  { transform: translate(-1px, -2px) rotate(.05deg); }
+    90%  { transform: translate(1px, 1px) rotate(-.05deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+/* フィルムの縦傷（ランダムに現れては消える白い縦線） */
+.startup-quote-inner::before {
+    content: '';
+    position: absolute;
+    top: -60vh; bottom: -60vh;
+    width: 2px;
+    left: 20%;
+    background: rgba(255,255,255,.4);
+    pointer-events: none;
+    animation: film-scratch 1.3s steps(1) infinite;
+}
+@keyframes film-scratch {
+    0%   { left: 12%; opacity: .5; }
+    15%  { left: 63%; opacity: 0; }
+    30%  { left: 41%; opacity: .45; }
+    45%  { left: 88%; opacity: 0; }
+    60%  { left: 27%; opacity: .5; }
+    75%  { left: 75%; opacity: .2; }
+    90%  { left: 5%;  opacity: 0; }
+    100% { left: 50%; opacity: .35; }
+}
+/* 文字そのものも不規則にちらつかせる */
+.startup-quote-text {
+    animation: flicker-text 4s ease-in-out infinite alternate, film-text-blink .9s steps(1) infinite;
+}
+@keyframes film-text-blink {
+    0%   { opacity: 1; }
+    18%  { opacity: .78; }
+    22%  { opacity: 1; }
+    57%  { opacity: .88; }
+    60%  { opacity: 1; }
+    83%  { opacity: .7; }
+    86%  { opacity: 1; }
+    100% { opacity: 1; }
+}
+
 /* ══════════════════════════════════════════════
    メインレイアウト
 ══════════════════════════════════════════════ */
@@ -545,8 +614,8 @@ rt { font-size: .38em; letter-spacing: 1px; color: rgba(255,220,180,.9); font-we
 </head>
 <body>
 
-<video id="bg-video" loop autoplay playsinline muted>
-    <source src="dainiti.mp4" type="video/mp4">
+<video id="bg-video" loop autoplay playsinline muted preload="auto">
+    <source src="Dainiti.mp4" type="video/mp4">
 </video>
 <video id="omi-video" playsinline>
     <source src="omimusic.mp4" type="video/mp4">
@@ -574,7 +643,7 @@ rt { font-size: .38em; letter-spacing: 1px; color: rgba(255,220,180,.9); font-we
     <button class="top-bar-btn" id="omi-btn">🏠 近江住宅使用不可</button>
     <div class="vol-row">
         <span>音量</span>
-        <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.5">
+        <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1">
     </div>
     <div class="spd-row">
         <span>指針速度</span>
@@ -1065,8 +1134,15 @@ function startSpin() {
     charImg.classList.add("is-spinning");
     document.getElementById("result-display").classList.remove("show");
     document.getElementById("explanation-display").classList.remove("show");
-    video.currentTime = 0; video.muted = false;
-    video.play().catch(()=>{});
+
+    // 【変更】ミュート解除 → 音量セット → 冒頭から再生（拒否されたらミュートで再生）
+    video.currentTime = 0;
+    video.muted  = false;
+    video.volume = +volumeSlider.value;
+    video.play().catch(() => {
+        video.muted = true;
+        video.play().catch(()=>{});
+    });
 
     const extra = 360*8 + Math.random()*360;
     currentRotation += extra;
@@ -1239,7 +1315,7 @@ document.getElementById("reset-btn").addEventListener("click",()=>{
     items=[...defaultData.items]; colors=[...defaultData.colors]; imageFiles=[...defaultData.imageFiles];
     document.getElementById("spin-duration").value=4; spinDuration=4000;
     canvas.style.transition="transform 4s cubic-bezier(.15,0,.15,1)";
-    video.src="dainiti.mp4"; video.load(); video.play().catch(()=>{});
+    video.src="Dainiti.mp4"; video.load(); video.play().catch(()=>{});
     charImg.src="arrow.png";
     renderItemList(); loadImages();
 });
@@ -1250,6 +1326,19 @@ document.getElementById("reset-btn").addEventListener("click",()=>{
 showStartupQuote();
 loadImages();
 renderItemList();
+
+// 【追加】ページを開いた時にミュートで背景動画を再生開始
+video.muted = true;
+video.play().catch(() => {
+    // 自動再生がブロックされた場合、最初のクリック／キー入力で再生開始
+    const kick = () => {
+        video.play().catch(()=>{});
+        document.removeEventListener("click", kick);
+        document.removeEventListener("keydown", kick);
+    };
+    document.addEventListener("click", kick);
+    document.addEventListener("keydown", kick);
+});
 </script>
 </body>
 </html>
